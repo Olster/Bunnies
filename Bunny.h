@@ -20,13 +20,16 @@ public:
 
 	void MakeOlder() { age_++; };
 
-	int get_age_() const { return age_; }
+	int get_age() const { return age_; }
+	std::wstring get_name() const { return name_; }
 
 	Img* get_img() const { return image_; }
 	void set_img(Img* img);
 
 	bool is_male() const { return is_male_; }
 	bool is_hazardous_vampire() const { return is_hazardous_vampire_; }
+
+	void MakeHazardousVampire() { is_hazardous_vampire_ = true; }
 
 	Img* MakeImgCopy() const { return image_->MakeCopy(); }
 

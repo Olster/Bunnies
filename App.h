@@ -23,6 +23,10 @@ public:
 	void OnTimer(HWND hwnd);
 	void OnKeyboard(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+	void DrawInfoText(HDC hdc, int x = 0, int y = 0);
+
+	void KillHalf();
+
 private:
 	std::wstring app_name_;
 	int window_height_;

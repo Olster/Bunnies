@@ -111,16 +111,16 @@ void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
 	// TODO Ask about the way out of this situation
 
 	if (is_male_) {
-		if (age_ < 2) {
-			display_text += L"/m";
-		} else {
+		if (age_ > 2) {
 			display_text += L"/M";
+		} else {
+			display_text += L"/m";
 		}
 	} else {
-		if (age_ < 2) {
-			display_text += L"/f";
-		} else {
+		if (age_ > 2) {
 			display_text += L"/F";
+		} else {
+			display_text += L"/f";
 		}
 	}
 
