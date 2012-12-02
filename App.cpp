@@ -112,9 +112,16 @@ void App::OnTimer(HWND hwnd) {
 
 	if (bunnies_.size() > 100) {
 		KillHalf();
+	}
 
+	if (bunnies_.size() > 500) {
+		MessageBox(NULL, L"Can't handle so many bunnies, they escape!", L"Damn", MB_OK);
+		PostQuitMessage(0);
 		return;
 	}
+
+	// Bunnies that will turn hazardous after this aging phase
+	std::vector<Bunny*> turn_hazardous;
 
 	std::list<Bunny*>::iterator i = bunnies_.begin();
 	while (i != bunnies_.end()) {
@@ -130,9 +137,6 @@ void App::OnTimer(HWND hwnd) {
 
 			Bunny* temp = *i;
 
-			// TODO Ask how to make it work properly
-
-			// TODO Work on this later
 			i = bunnies_.erase(i);
 
 			delete temp;
@@ -161,20 +165,24 @@ void App::OnTimer(HWND hwnd) {
 		}
 
 		// Letting one hazardous vampire to transform the other one
+		// Have to make temp vector of adresses to change them after selection
+		if ((*i)->is_hazardous_vampire()) {
+			for (std::list<Bunny*>::iterator j = bunnies_.begin(); j != bunnies_.end(); ++j) {
+				if (!(*j)->is_hazardous_vampire()) {
+					turn_hazardous.push_back(*j);
 
-		// TODO Fix. Makes all bunnies hazardous
-		//if ((*i)->is_hazardous_vampire()) {
-		//	for (std::list<Bunny*>::iterator j = bunnies_.begin(); j != bunnies_.end(); ++j) {
-		//		if (!(*j)->is_hazardous_vampire()) {
-		//			(*j)->MakeHazardousVampire();
-
-		//			// Transforming one bunny only
-		//			break;
-		//		}
-		//	}
-		//}
+					// Transforming one bunny only
+					break;
+				}
+			}
+		}
 
 		++i;
+	}
+
+	// Making selected bunnies hazardous
+	for (std::vector<Bunny*>::iterator j = turn_hazardous.begin(); j != turn_hazardous.end(); ++j) {
+		(*j)->MakeHazardousVampire();
 	}
 
 	InvalidateRect(hwnd, NULL, FALSE);
@@ -224,7 +232,7 @@ void App::DrawInfoText(HDC hdc, int x, int y) {
 	std::wstring display_text = L"There are ";
 
 	// I'm sure I can make this with bunnies_.size()
-	display_text += helpers::IntToString(Bunny::get_bunnies_overall_());
+	display_text += helpers::IntToString(Bunny::get_bunnies_overall());
 
 	display_text += L" bunnies";
 
@@ -241,7 +249,7 @@ void App::KillHalf() {
 
 	std::list<Bunny*>::iterator i = bunnies_.begin();
 
-	while (poor_bunnies.size() < bunnies_.size()) {
+	while (poor_bunnies.size() < bunnies_.size()/2) {
 		// 50% chance to be selected for butchery
 		if (rand() % 2) {
 			poor_bunnies.push_back(*i);

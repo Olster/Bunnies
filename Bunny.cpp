@@ -4,7 +4,7 @@
 #include <cstdlib>
 
 std::vector<std::wstring> Bunny::list_of_names_ = Bunny::MakeNamesVector();
-std::vector<std::wstring> Bunny::list_of_images_ = Bunny::MakeImgPathesVector();
+std::vector<std::wstring> Bunny::list_of_images_ = Bunny::MakeImgPathsVector();
 int Bunny::bunnies_overall_ = 0;
 
 std::vector<std::wstring> Bunny::MakeNamesVector() {
@@ -25,21 +25,21 @@ std::vector<std::wstring> Bunny::MakeNamesVector() {
 	return names;
 }
 
-std::vector<std::wstring> Bunny::MakeImgPathesVector() {
-	std::vector<std::wstring> pathes;
-	pathes.push_back(L"images/bunny0.bmp");
-	pathes.push_back(L"images/bunny1.bmp");
-	pathes.push_back(L"images/bunny2.bmp");
-	pathes.push_back(L"images/bunny3.bmp");
+std::vector<std::wstring> Bunny::MakeImgPathsVector() {
+	std::vector<std::wstring> paths;
+	paths.push_back(L"images/bunny0.bmp");
+	paths.push_back(L"images/bunny1.bmp");
+	paths.push_back(L"images/bunny2.bmp");
+	paths.push_back(L"images/bunny3.bmp");
 
-	return pathes;
+	return paths;
 }
 
 Bunny::Bunny():
 image_(0)
 {
 	// Not sure why it's glitching on me
-	// have to check if |names| and |pathes| are not empty
+	// have to check if |names| and |paths| are not empty
 	// TODO Ask about it
 
 	if (list_of_names_.empty()) {
@@ -47,7 +47,7 @@ image_(0)
 	}
 
 	if (list_of_images_.empty()) {
-		list_of_images_ = MakeImgPathesVector();
+		list_of_images_ = MakeImgPathsVector();
 	}
 
 
@@ -57,6 +57,7 @@ image_(0)
 	// 50% chance of male
 	is_male_ = static_cast<bool>(rand() % 2);
 
+	// TODO Ask if I did this in a right way
 	is_hazardous_vampire_ = RandomHazardous();
 
 	age_ = 0;
@@ -107,9 +108,6 @@ void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
 	display_text += helpers::IntToString(age_);
 	display_text += L")";
 
-	// It's really messy, must be another way
-	// TODO Ask about the way out of this situation
-
 	if (is_male_) {
 		if (age_ > 2) {
 			display_text += L"/M";
@@ -128,7 +126,7 @@ void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
 		display_text += L"/H";
 	}
 
-	TextOutW(hDc, x, y - 15, display_text.c_str(), display_text.length());				// "m_x + 2" for correct displaying
+	TextOutW(hDc, x, y - 15, display_text.c_str(), display_text.length());
 
 	SelectObject(hDc, old_font);
 
@@ -167,6 +165,6 @@ void Bunny::set_img(Img* img) {
 	image_ = img;
 }
 
-int Bunny::get_bunnies_overall_() {
+int Bunny::get_bunnies_overall() {
 	return bunnies_overall_;
 }

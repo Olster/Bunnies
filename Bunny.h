@@ -13,8 +13,8 @@ public:
 	// Returns list of names
 	static std::vector<std::wstring> MakeNamesVector();
 
-	// Returns bunny images pathes
-	static std::vector<std::wstring> MakeImgPathesVector();
+	// Returns bunny images paths
+	static std::vector<std::wstring> MakeImgPathsVector();
 
 	void Draw(HDC hDc, int x, int y, int width = -1, int height = -1);
 
@@ -33,7 +33,7 @@ public:
 
 	Img* MakeImgCopy() const { return image_->MakeCopy(); }
 
-	static int get_bunnies_overall_();
+	static int get_bunnies_overall();
 
 private:
 	std::wstring name_;
