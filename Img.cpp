@@ -2,13 +2,13 @@
 #include "Img.h"
 
 Img::Img(std::wstring src) {
-	img_ = (HBITMAP)LoadImage(NULL, src.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
-	mask_img_ = CreateBitmapMask(img_, RGB(255, 255, 255));
+	m_img = (HBITMAP)LoadImage(NULL, src.c_str(), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+	m_mask_img = CreateBitmapMask(m_img, RGB(255, 255, 255));
 }
 
 Img::Img(HBITMAP img, HBITMAP img_mask) {
-	img_ = img;
-	mask_img_ = img_mask;
+	m_img = img;
+	m_mask_img = img_mask;
 }
 
 HBITMAP Img::CreateBitmapMask(HBITMAP hbmColour, COLORREF crTransparent) {
@@ -66,7 +66,7 @@ void Img::Draw(HDC hDc, int x, int y, int width, int height) {
 	HDC hNewDC = CreateCompatibleDC(hDc);
 
 	BITMAP bm;
-	GetObject(img_, sizeof(BITMAP), &bm);
+	GetObject(m_img, sizeof(BITMAP), &bm);
 
 	if (width == -1) {
 		width = bm.bmWidth;
@@ -76,10 +76,10 @@ void Img::Draw(HDC hDc, int x, int y, int width, int height) {
 		height = bm.bmHeight;
 	}
 
-	SelectObject(hNewDC, mask_img_);
+	SelectObject(hNewDC, m_mask_img);
 	StretchBlt(hDc, x, y, width, height, hNewDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCAND);
 
-	HBITMAP hOrigBMP = (HBITMAP)SelectObject(hNewDC, img_);
+	HBITMAP hOrigBMP = (HBITMAP)SelectObject(hNewDC, m_img);
 	StretchBlt(hDc, x, y, width, height, hNewDC, 0, 0, bm.bmWidth, bm.bmHeight, SRCPAINT);
 
 	SelectObject(hNewDC, hOrigBMP);
@@ -87,13 +87,13 @@ void Img::Draw(HDC hDc, int x, int y, int width, int height) {
 }
 
 void Img::set_img(HBITMAP img) {
-	img_ = img;
+	m_img = img;
 }
 
 void Img::set_img_mask(HBITMAP hbm) {
-	mask_img_ = hbm;
+	m_mask_img = hbm;
 }
 
 Img* Img::MakeCopy() {
-	return new Img(img_, mask_img_);
+	return new Img(m_img, m_mask_img);
 }

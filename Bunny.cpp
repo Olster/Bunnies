@@ -1,88 +1,45 @@
 #include "StdAfx.h"
+
+#include "Img.h"
 #include "Bunny.h"
 
 #include <cstdlib>
 
-std::vector<std::wstring> Bunny::list_of_names_ = Bunny::MakeNamesVector();
-std::vector<std::wstring> Bunny::list_of_images_ = Bunny::MakeImgPathsVector();
-int Bunny::bunnies_overall_ = 0;
-
-std::vector<std::wstring> Bunny::MakeNamesVector() {
-	std::vector<std::wstring> names;
-	names.push_back(L"Alex");
-	names.push_back(L"Bailey");
-	names.push_back(L"Brett");
-	names.push_back(L"Cameron");
-	names.push_back(L"Casey");
-	names.push_back(L"Chris");
-	names.push_back(L"Cody");
-	names.push_back(L"Dale");
-	names.push_back(L"Dee");
-	names.push_back(L"Drew");
-	names.push_back(L"Evan");
-	names.push_back(L"Hunter");
-
-	return names;
-}
-
-std::vector<std::wstring> Bunny::MakeImgPathsVector() {
-	std::vector<std::wstring> paths;
-	paths.push_back(L"images/bunny0.bmp");
-	paths.push_back(L"images/bunny1.bmp");
-	paths.push_back(L"images/bunny2.bmp");
-	paths.push_back(L"images/bunny3.bmp");
-
-	return paths;
-}
+int Bunny::m_bunnies_overall = 0;
 
 Bunny::Bunny():
-image_(0)
+m_image(0)
 {
-	// Not sure why it's glitching on me
-	// have to check if |names| and |paths| are not empty
-	// TODO Ask about it
+	m_name = RandomName();
 
-	if (list_of_names_.empty()) {
-		list_of_names_ = MakeNamesVector();
-	}
-
-	if (list_of_images_.empty()) {
-		list_of_images_ = MakeImgPathsVector();
-	}
-
-
-	name_ = RandomName();
-
-	// Static cast is easier to find than "(bool)"
 	// 50% chance of male
-	is_male_ = static_cast<bool>(rand() % 2);
+	m_is_male = (rand() % 2 == 0);
 
-	// TODO Ask if I did this in a right way
-	is_hazardous_vampire_ = RandomHazardous();
+	m_is_hazardous_vampire = RandomHazardous();
 
-	age_ = 0;
+	m_age = 0;
 
-	image_ = new Img(RandomImgPath());
+	m_image = new Img(RandomImgPath());
 
-	bunnies_overall_++;
+	m_bunnies_overall++;
 
-	//MessageBox(NULL, name_.c_str(), L"New bunny was born", MB_OK);
+	//MessageBox(NULL, m_name.c_str(), L"New bunny was born", MB_OK);
 }
 
 
 Bunny::~Bunny() {
-	delete image_;
-	image_ = 0;
+	delete m_image;
+	m_image = 0;
 
-	bunnies_overall_--;
+	m_bunnies_overall--;
 
-	std::wstring info_text = L"Bunny " + name_ + L" has died...";
+	//std::wstring info_text = L"Bunny " + m_name + L" has died...";
 
 	//MessageBox(NULL, info_text.c_str(), L"Sad news", MB_OK);
 }
 
 void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
-	image_->Draw(hDc, x, y, width, height);
+	m_image->Draw(hDc, x, y, width, height);
 
 	// Let's write bunny's name, shall we?
 	HFONT arial_font;
@@ -102,27 +59,27 @@ void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
 
 	old_font = (HFONT)::SelectObject(hDc, arial_font);
 
-	std::wstring display_text = name_;
+	std::wstring display_text = m_name;
 
 	display_text += L"(";
-	display_text += helpers::IntToString(age_);
+	display_text += helpers::IntToString(m_age);
 	display_text += L")";
 
-	if (is_male_) {
-		if (age_ > 2) {
+	if (m_is_male) {
+		if (m_age > 2) {
 			display_text += L"/M";
 		} else {
 			display_text += L"/m";
 		}
 	} else {
-		if (age_ > 2) {
+		if (m_age > 2) {
 			display_text += L"/F";
 		} else {
 			display_text += L"/f";
 		}
 	}
 
-	if (is_hazardous_vampire_) {
+	if (m_is_hazardous_vampire) {
 		display_text += L"/H";
 	}
 
@@ -135,23 +92,40 @@ void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
 
 
 std::wstring Bunny::RandomName() {
-	// Getting random positin in a vector of names
-	int rand_num = rand() % list_of_names_.size();
+	std::wstring names[12] = {
+		L"Alex",
+		L"Bailey",
+		L"Brett",
+		L"Cameron",
+		L"Casey",
+		L"Chris",
+		L"Cody",
+		L"Dale",
+		L"Dee",
+		L"Drew",
+		L"Evan",
+		L"Hunter"
+	};
 
-	return list_of_names_[rand_num];
+	return names[rand() % 12];
 }
 
 std::wstring Bunny::RandomImgPath() {
-	int rand_num = rand() % list_of_images_.size();
+	std::wstring images_paths[4] = {
+		L"images/bunny0.bmp",
+		L"images/bunny1.bmp",
+		L"images/bunny2.bmp",
+		L"images/bunny3.bmp"
+	};
 
-	return list_of_images_[rand_num];
+	return images_paths[rand() % 4];
 }
 
 bool Bunny::RandomHazardous() {
-	double rand_num = static_cast<double>(rand())/RAND_MAX;
+	int percentage = rand() % 100;
 
 	// Basically making it 2% chance of being hazardous
-	if (rand_num < 0.02) {
+	if (percentage < 2) {
 		return true;
 	}
 
@@ -159,12 +133,16 @@ bool Bunny::RandomHazardous() {
 }
 
 void Bunny::set_img(Img* img) {
-	delete image_;
-	image_ = 0;
+	delete m_image;
+	m_image = 0;
 
-	image_ = img;
+	m_image = img;
+}
+
+Img* Bunny::MakeImgCopy() const {
+	return m_image->MakeCopy();
 }
 
 int Bunny::get_bunnies_overall() {
-	return bunnies_overall_;
+	return m_bunnies_overall;
 }

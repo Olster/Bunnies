@@ -6,7 +6,7 @@
 	void operator=(const type&)
 
 #define NO_DEFAULTS(type)\
-	type();\
-	~type();	
+	type() {}\
+	~type() {}	
 
 #endif

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "copy_blocker.h"
-#include <Windows.h>
 
 class IEvent {
 public:

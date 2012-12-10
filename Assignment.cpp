@@ -7,7 +7,7 @@
 
 #define MAX_LOADSTRING 100
 
-App app(L"Bunnies? We just don't know");
+App app(L"Bunnies? We just don't know", 700, 700);
 
 // Global Variables:
 HINSTANCE hInst;								// current instance

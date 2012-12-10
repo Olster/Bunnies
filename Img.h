@@ -5,7 +5,7 @@
 
 class Img {
 public:
-	Img(std::wstring);
+	Img(std::wstring src);
 	Img(HBITMAP img, HBITMAP img_mask);
 	~Img() {}
 
@@ -19,8 +19,8 @@ public:
 	static HBITMAP CreateBitmapMask(HBITMAP hbmColour, COLORREF crTransparent);
 
 private:
-	HBITMAP img_;
-	HBITMAP mask_img_;
+	HBITMAP m_img;
+	HBITMAP m_mask_img;
 
 	DISALLOW_COPY_AND_ASSING(Img);
 };

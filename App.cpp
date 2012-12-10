@@ -4,24 +4,24 @@
 #include <ctime>
 
 App::App(std::wstring app_name, int window_width, int window_height):
-background_(L"images/background.bmp")
+m_background(L"images/background.bmp")
 {
-	srand(time(0));
+	srand(time(NULL));
 
-	app_name_ = app_name;
-	window_width_ = window_width;
-	window_height_ = window_height;
+	m_app_name = app_name;
+	m_window_width = window_width;
+	m_window_height = window_height;
 
-	// Making initialy 5 bunnies
+	// Making 5 bunnies initially
 	for (int i = 0; i < 5; i++) {
-		bunnies_.push_back(new Bunny());
+		m_bunnies.push_back(new Bunny);
 	}
 }
 
 
 App::~App() {
-	for (std::list<Bunny*>::iterator i = bunnies_.begin(); i != bunnies_.end(); ++i) {
-		Bunny* temp = *i;  // Returns |Bunny*|
+	for (std::list<Bunny*>::iterator i = m_bunnies.begin(); i != m_bunnies.end(); ++i) {
+		Bunny* temp = *i;
 
 		// Uncomment the following for the info about each bunny in the end
 		/*std::wstring bunny_info = temp->get_name();
@@ -45,7 +45,7 @@ App::~App() {
 		MessageBox(NULL, bunny_info.c_str(), L"Look!", MB_OK);*/
 		
 		// Next line is optional
-		//bunnies_.remove(temp);  // Removes bunny from the list
+		//m_bunnies.remove(temp);  // Removes bunny from the list
 
 		delete temp;
 	}
@@ -78,18 +78,18 @@ void App::OnPaint(HWND hwnd) {
 
 	Rectangle(hdc_mem, client_rect.left - 1, client_rect.top - 1, client_rect.right + 1, client_rect.bottom + 1);
 
-	background_.Draw(hdc_mem, 0, 0, client_rect.right, client_rect.bottom);
+	m_background.Draw(hdc_mem, 0, 0, client_rect.right, client_rect.bottom);
 
 	// Drawing here
 
 	// Drawing number of bunnies on the screen
 	DrawInfoText(hdc_mem);
 
-	for (std::list<Bunny*>::iterator i = bunnies_.begin(); i != bunnies_.end(); ++i) {
-		int x = rand() % (client_rect.right - bunny_img_width_);
-		int y = rand() % (client_rect.bottom - bunny_img_height_ + 15);	// |15| for correct name displaying
+	for (std::list<Bunny*>::iterator i = m_bunnies.begin(); i != m_bunnies.end(); ++i) {
+		int x = rand() % (client_rect.right - m_bunny_img_width);
+		int y = rand() % (client_rect.bottom - m_bunny_img_height + 15);	// |15| for correct name displaying
 
-		(*i)->Draw(hdc_mem, x, y, bunny_img_width_, bunny_img_height_);
+		(*i)->Draw(hdc_mem, x, y, m_bunny_img_width, m_bunny_img_height);
 	}
 
 	// Stop drawing
@@ -105,16 +105,17 @@ void App::OnPaint(HWND hwnd) {
 void App::OnTimer(HWND hwnd) {
 	//MessageBox(hwnd, L"Time event", L"Timer", MB_OK);
 
-	if (bunnies_.empty()) {
+	if (m_bunnies.empty()) {
 		MessageBox(hwnd, L"No bunnies left, closing the app", L"Oh well", MB_OK);
 		OnDestroy();
 	}
 
-	if (bunnies_.size() > 100) {
-		KillHalf();
+	if (m_bunnies.size() > 100) {
+		KillHalf(hwnd);
+		return;
 	}
 
-	if (bunnies_.size() > 500) {
+	if (m_bunnies.size() > 400) {
 		MessageBox(NULL, L"Can't handle so many bunnies, they escape!", L"Damn", MB_OK);
 		PostQuitMessage(0);
 		return;
@@ -123,8 +124,8 @@ void App::OnTimer(HWND hwnd) {
 	// Bunnies that will turn hazardous after this aging phase
 	std::vector<Bunny*> turn_hazardous;
 
-	std::list<Bunny*>::iterator i = bunnies_.begin();
-	while (i != bunnies_.end()) {
+	std::list<Bunny*>::iterator i = m_bunnies.begin();
+	while (i != m_bunnies.end()) {
 		(*i)->MakeOlder();
 
 		if ((*i)->get_age() > 10) {
@@ -137,37 +138,36 @@ void App::OnTimer(HWND hwnd) {
 
 			Bunny* temp = *i;
 
-			i = bunnies_.erase(i);
+			i = m_bunnies.erase(i);
 
 			delete temp;
 			temp = 0;
 
-			// Don't let it get increment the iterator
+			// Don't let it to get to increment the iterator
 			continue;
 		}
 
 		// Making new bunny
 		if ((*i)->is_male() && ((*i)->get_age() > 2) && !(*i)->is_hazardous_vampire()) {
-			for (std::list<Bunny*>::iterator j = bunnies_.begin(); j != bunnies_.end(); ++j) {
+			for (std::list<Bunny*>::iterator j = m_bunnies.begin(); j != m_bunnies.end(); ++j) {
 				// Looking for females
 				// Sounds creepy, doesn't it?
 
 				if (!(*j)->is_male() && ((*j)->get_age() > 2) && !(*j)->is_hazardous_vampire()) {
 					Bunny* new_bunny = new Bunny();
 
-					// I'm sure this will lag when I'll delete objects
 					Img* mother_img = (*j)->MakeImgCopy();
 					new_bunny->set_img(mother_img);
 
-					bunnies_.push_back(new_bunny);
+					m_bunnies.push_back(new_bunny);
 				}
 			}
 		}
 
 		// Letting one hazardous vampire to transform the other one
-		// Have to make temp vector of adresses to change them after selection
+		// Have to make temp vector of addresses to change them after selection
 		if ((*i)->is_hazardous_vampire()) {
-			for (std::list<Bunny*>::iterator j = bunnies_.begin(); j != bunnies_.end(); ++j) {
+			for (std::list<Bunny*>::iterator j = m_bunnies.begin(); j != m_bunnies.end(); ++j) {
 				if (!(*j)->is_hazardous_vampire()) {
 					turn_hazardous.push_back(*j);
 
@@ -191,22 +191,33 @@ void App::OnTimer(HWND hwnd) {
 void App::OnKeyboard(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
 	switch (message) {
 		case WM_KEYUP:
+
 		break;
 
 		case WM_KEYDOWN:
+
 		break;
 
 		case WM_CHAR: {
 			switch (wParam) {
 				case 'k':
-					KillHalf();
+					KillHalf(hwnd);
 				break;
 
 				case 'x':
 					PostQuitMessage(0);
 				break;
+
+				// Temporary thing to fasten the program
+				case ' ':
+					OnTimer(hwnd);
+				break;
 			}
 		}
+		break;
+
+		default:
+
 		break;
 	}
 }
@@ -231,7 +242,7 @@ void App::DrawInfoText(HDC hdc, int x, int y) {
 
 	std::wstring display_text = L"There are ";
 
-	// I'm sure I can make this with bunnies_.size()
+	// I'm sure I can make this with m_bunnies.size()
 	display_text += helpers::IntToString(Bunny::get_bunnies_overall());
 
 	display_text += L" bunnies";
@@ -243,17 +254,22 @@ void App::DrawInfoText(HDC hdc, int x, int y) {
 	DeleteObject(arial_font);
 }
 
-void App::KillHalf() {
+void App::KillHalf(HWND hwnd) {
+	if (m_bunnies.empty()) {
+		// No bunnies to be killed
+		return;
+	}
+
 	// Vector of bunnies to be deleted
 	std::vector<Bunny*> poor_bunnies;
 
-	std::list<Bunny*>::iterator i = bunnies_.begin();
+	std::list<Bunny*>::iterator i = m_bunnies.begin();
 
-	while (poor_bunnies.size() < bunnies_.size()/2) {
+	while (poor_bunnies.size() < m_bunnies.size()/2) {
 		// 50% chance to be selected for butchery
 		if (rand() % 2) {
 			poor_bunnies.push_back(*i);
-			i = bunnies_.erase(i);
+			i = m_bunnies.erase(i);
 
 			continue;
 		}
@@ -261,8 +277,8 @@ void App::KillHalf() {
 		++i;
 
 		// Jumping back to the beginning
-		if (i == bunnies_.end()) {
-			i = bunnies_.begin();
+		if (i == m_bunnies.end()) {
+			i = m_bunnies.begin();
 		}
 	}
 
@@ -271,6 +287,8 @@ void App::KillHalf() {
 	}
 
 	std::wstring number_of_killed = helpers::IntToString(poor_bunnies.size());
+
+	InvalidateRect(hwnd, NULL, FALSE);
 
 	MessageBox(NULL, number_of_killed.c_str(), L"Were killed", MB_OK);
 }
