@@ -29,6 +29,15 @@ public:
 	void KillHalf(HWND hwnd);
 
 private:
+	void AssignPositions();
+	Position* FindFreePos();
+
+	void FindBunnyPosInArray(const Position* const mother_pos, int& i_pos_index, int& j_pos_index);
+
+	void MakeBunny(Img* mother_img, int i, int j);
+
+	Bunny* FindBunnyByPos(Position pos);
+
 	std::wstring m_app_name;
 	int m_window_height;
 	int m_window_width;
@@ -37,11 +46,14 @@ private:
 	static const int m_bunny_img_width = 25;
 	static const int m_bunny_img_height = 25;
 
+	// 400 bunnies max
+	Position m_positions[20][20];
+
+	static bool m_positions_assigned;
+
 	Img m_background;
 
 	std::list<Bunny*> m_bunnies;
-
-	Bunny* m_bunny_grid[20][20];
 
 	DISALLOW_COPY_AND_ASSING(App);
 };

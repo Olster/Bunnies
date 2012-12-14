@@ -38,8 +38,8 @@ Bunny::~Bunny() {
 	//MessageBox(NULL, info_text.c_str(), L"Sad news", MB_OK);
 }
 
-void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
-	m_image->Draw(hDc, x, y, width, height);
+void Bunny::Draw(HDC hDc) {
+	m_image->Draw(hDc, m_pos->m_x, m_pos->m_y, m_pos->m_width, m_pos->m_height);
 
 	// Let's write bunny's name, shall we?
 	HFONT arial_font;
@@ -53,7 +53,7 @@ void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
 	lf.lfStrikeOut = false;
 	lf.lfOrientation = 0;
 	lf.lfWeight = FW_NORMAL;
-	lf.lfHeight = -10;
+	lf.lfHeight = -8;
 	lstrcpy(lf.lfFaceName, L"Arial");
 	arial_font = CreateFontIndirect(&lf);
 
@@ -83,7 +83,7 @@ void Bunny::Draw(HDC hDc, int x, int y, int width, int height) {
 		display_text += L"/H";
 	}
 
-	TextOutW(hDc, x, y - 15, display_text.c_str(), display_text.length());
+	TextOutW(hDc, m_pos->m_x, m_pos->m_y - 15, display_text.c_str(), display_text.length());
 
 	SelectObject(hDc, old_font);
 
@@ -141,6 +141,11 @@ void Bunny::set_img(Img* img) {
 
 Img* Bunny::MakeImgCopy() const {
 	return m_image->MakeCopy();
+}
+
+void Bunny::set_pos(Position* pos) {
+	pos->m_is_occupied = true;
+	m_pos = pos;
 }
 
 int Bunny::get_bunnies_overall() {

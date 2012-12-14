@@ -3,9 +3,17 @@
 
 #include <ctime>
 
+bool App::m_positions_assigned = false;
+
 App::App(std::wstring app_name, int window_width, int window_height):
 m_background(L"images/background.bmp")
 {
+	if (!m_positions_assigned) {
+		AssignPositions();
+
+		m_positions_assigned = true;
+	}
+
 	srand(time(NULL));
 
 	m_app_name = app_name;
@@ -14,7 +22,11 @@ m_background(L"images/background.bmp")
 
 	// Making 5 bunnies initially
 	for (int i = 0; i < 5; i++) {
-		m_bunnies.push_back(new Bunny);
+		Bunny* temp_bunny = new Bunny;
+		
+		temp_bunny->set_pos(FindFreePos());
+
+		m_bunnies.push_back(temp_bunny);
 	}
 }
 
@@ -52,8 +64,8 @@ App::~App() {
 }
 
 void App::OnCreate(HWND hwnd) {
-	// Setting 6 sec timer
-	SetTimer(hwnd, 1, 6000, NULL);
+	// Setting 2 sec timer
+	SetTimer(hwnd, 1, 2000, NULL);
 }
 
 int App::OnDestroy() {
@@ -86,10 +98,7 @@ void App::OnPaint(HWND hwnd) {
 	DrawInfoText(hdc_mem);
 
 	for (std::list<Bunny*>::iterator i = m_bunnies.begin(); i != m_bunnies.end(); ++i) {
-		int x = rand() % (client_rect.right - m_bunny_img_width);
-		int y = rand() % (client_rect.bottom - m_bunny_img_height + 15);	// |15| for correct name displaying
-
-		(*i)->Draw(hdc_mem, x, y, m_bunny_img_width, m_bunny_img_height);
+		(*i)->Draw(hdc_mem);
 	}
 
 	// Stop drawing
@@ -110,14 +119,14 @@ void App::OnTimer(HWND hwnd) {
 		OnDestroy();
 	}
 
-	if (m_bunnies.size() > 100) {
+	if (m_bunnies.size() > 200) {
 		KillHalf(hwnd);
 		return;
 	}
 
 	if (m_bunnies.size() > 400) {
 		MessageBox(NULL, L"Can't handle so many bunnies, they escape!", L"Damn", MB_OK);
-		PostQuitMessage(0);
+		OnDestroy();
 		return;
 	}
 
@@ -132,19 +141,25 @@ void App::OnTimer(HWND hwnd) {
 			// Bunny is too old and has to die :(
 
 			// But if bunny is a hazardous vampire, it stays living unless it's more than 50 y. o.
-			if ((*i)->is_hazardous_vampire() && ((*i)->get_age() < 50)) {
+			// Not really good looking if statement, rewrite later
+			if (!(*i)->is_hazardous_vampire() || ((*i)->is_hazardous_vampire() && ((*i)->get_age() > 50))) {
+				Bunny* temp = *i;
+
+				int i_pos = 0;
+				int j_pos = 0;
+
+				FindBunnyPosInArray((*i)->get_pos(), i_pos, j_pos);
+
+				m_positions[i_pos][j_pos].m_is_occupied = false;
+
+				i = m_bunnies.erase(i);
+
+				delete temp;
+				temp = 0;
+
+				// Don't let it to get to increment the iterator
 				continue;
-			}
-
-			Bunny* temp = *i;
-
-			i = m_bunnies.erase(i);
-
-			delete temp;
-			temp = 0;
-
-			// Don't let it to get to increment the iterator
-			continue;
+			}			
 		}
 
 		// Making new bunny
@@ -154,12 +169,54 @@ void App::OnTimer(HWND hwnd) {
 				// Sounds creepy, doesn't it?
 
 				if (!(*j)->is_male() && ((*j)->get_age() > 2) && !(*j)->is_hazardous_vampire()) {
-					Bunny* new_bunny = new Bunny();
 
-					Img* mother_img = (*j)->MakeImgCopy();
-					new_bunny->set_img(mother_img);
+					Position* mother_pos = (*j)->get_pos();
+					int i_mother_pos_index = 0;
+					int j_mother_pos_index = 0;
 
-					m_bunnies.push_back(new_bunny);
+					// ins: mother_pos; outs: i_mother_pos_index, j_mother_pos_index
+					FindBunnyPosInArray(mother_pos, i_mother_pos_index, j_mother_pos_index);
+
+					// Let's find a place for a baby, shall we?
+
+					// I could easily use GOTO, but butt
+					bool bunny_is_made = false;
+
+					// Let's check if top is free
+					if (i_mother_pos_index > 0 && !bunny_is_made && !m_positions[i_mother_pos_index - 1][j_mother_pos_index].m_is_occupied) {
+						Img* mother_img = (*j)->MakeImgCopy();
+						
+						MakeBunny(mother_img, i_mother_pos_index - 1, j_mother_pos_index);
+
+						bunny_is_made = true;
+					}
+
+					// Time to check the bottom
+					if (i_mother_pos_index < 19 && !bunny_is_made && !m_positions[i_mother_pos_index + 1][j_mother_pos_index].m_is_occupied) {
+						Img* mother_img = (*j)->MakeImgCopy();
+						
+						MakeBunny(mother_img, i_mother_pos_index + 1, j_mother_pos_index);
+
+						bunny_is_made = true;
+					}
+
+					// Time to check left
+					if (j_mother_pos_index > 0 && !bunny_is_made && !m_positions[i_mother_pos_index][j_mother_pos_index - 1].m_is_occupied) {
+						Img* mother_img = (*j)->MakeImgCopy();
+						
+						MakeBunny(mother_img, i_mother_pos_index, j_mother_pos_index - 1);
+
+						bunny_is_made = true;
+					}
+
+					// And the right
+					if (j_mother_pos_index < 19 && !bunny_is_made && !m_positions[i_mother_pos_index][j_mother_pos_index + 1].m_is_occupied) {
+						Img* mother_img = (*j)->MakeImgCopy();
+						
+						MakeBunny(mother_img, i_mother_pos_index, j_mother_pos_index + 1);
+
+						bunny_is_made = true;
+					}
 				}
 			}
 		}
@@ -167,12 +224,54 @@ void App::OnTimer(HWND hwnd) {
 		// Letting one hazardous vampire to transform the other one
 		// Have to make temp vector of addresses to change them after selection
 		if ((*i)->is_hazardous_vampire()) {
-			for (std::list<Bunny*>::iterator j = m_bunnies.begin(); j != m_bunnies.end(); ++j) {
-				if (!(*j)->is_hazardous_vampire()) {
-					turn_hazardous.push_back(*j);
 
-					// Transforming one bunny only
-					break;
+			int i_pos_hazardous;
+			int j_pos_hazardous;
+
+			Position* hazardous_pos = (*i)->get_pos();
+
+			FindBunnyPosInArray(hazardous_pos, i_pos_hazardous, j_pos_hazardous);
+
+			// Let's check if top is not hazardous yet
+
+			bool is_victim_found = false;
+
+			if (i_pos_hazardous > 0 && !is_victim_found) {
+				Bunny* temp_bunny = FindBunnyByPos(m_positions[i_pos_hazardous - 1][j_pos_hazardous]);
+
+				if (temp_bunny) {
+					turn_hazardous.push_back(temp_bunny);
+					is_victim_found = true;
+				}
+			}
+
+			// Time to check the bottom
+			if (i_pos_hazardous < 19 && !is_victim_found) {
+				Bunny* temp_bunny = FindBunnyByPos(m_positions[i_pos_hazardous + 1][j_pos_hazardous]);
+				
+				if (temp_bunny) {
+					turn_hazardous.push_back(temp_bunny);
+					is_victim_found = true;
+				}
+			}
+
+			// Time to check left
+			if (j_pos_hazardous > 0 && !is_victim_found) {
+				Bunny* temp_bunny = FindBunnyByPos(m_positions[i_pos_hazardous][j_pos_hazardous - 1]);
+
+				if (temp_bunny) {
+					turn_hazardous.push_back(temp_bunny);
+					is_victim_found = true;
+				}
+			}
+
+			// And the right
+			if (j_pos_hazardous < 19 && !is_victim_found) {
+				Bunny* temp_bunny = FindBunnyByPos(m_positions[i_pos_hazardous][j_pos_hazardous + 1]);
+
+				if (temp_bunny) {
+					turn_hazardous.push_back(temp_bunny);
+					is_victim_found = true;
 				}
 			}
 		}
@@ -180,9 +279,11 @@ void App::OnTimer(HWND hwnd) {
 		++i;
 	}
 
-	// Making selected bunnies hazardous
-	for (std::vector<Bunny*>::iterator j = turn_hazardous.begin(); j != turn_hazardous.end(); ++j) {
-		(*j)->MakeHazardousVampire();
+	// Making selected bunnies hazardous if the vector is not empty
+	if (!turn_hazardous.empty()) {
+		for (std::vector<Bunny*>::iterator j = turn_hazardous.begin(); j != turn_hazardous.end(); ++j) {
+			(*j)->MakeHazardousVampire();
+		}
 	}
 
 	InvalidateRect(hwnd, NULL, FALSE);
@@ -234,7 +335,7 @@ void App::DrawInfoText(HDC hdc, int x, int y) {
 	lf.lfStrikeOut = false;
 	lf.lfOrientation = 0;
 	lf.lfWeight = FW_NORMAL;
-	lf.lfHeight = -10;
+	lf.lfHeight = -8;
 	lstrcpy(lf.lfFaceName, L"Arial");
 	arial_font = CreateFontIndirect(&lf);
 
@@ -283,6 +384,13 @@ void App::KillHalf(HWND hwnd) {
 	}
 
 	for (std::vector<Bunny*>::iterator i = poor_bunnies.begin(); i != poor_bunnies.end(); ++i) {
+		int i_pos = 0;
+		int j_pos = 0;
+
+		FindBunnyPosInArray((*i)->get_pos(), i_pos, j_pos);
+
+		m_positions[i_pos][j_pos].m_is_occupied = false;
+
 		delete *i;
 	}
 
@@ -291,4 +399,87 @@ void App::KillHalf(HWND hwnd) {
 	InvalidateRect(hwnd, NULL, FALSE);
 
 	MessageBox(NULL, number_of_killed.c_str(), L"Were killed", MB_OK);
+}
+
+void App::AssignPositions() {
+	int current_x = 0;
+
+	// X distance between 2 bunnies
+	int x_dist = 10;
+
+	// Text is drawn higher than the bunny
+	int current_y = 20;
+
+	for (int i = 0; i < 20; i++) {
+		current_x = 0;
+		for (int j = 0; j < 20; j++) {
+			m_positions[i][j].m_x = current_x;
+			m_positions[i][j].m_y = current_y;
+			m_positions[i][j].m_width = m_bunny_img_width;
+			m_positions[i][j].m_height = m_bunny_img_height;
+
+			current_x += m_bunny_img_width;
+			current_x += x_dist;
+		}
+
+		current_y += m_bunny_img_height;
+	}
+}
+
+Position* App::FindFreePos() {
+	// If any free found, return the 0 0 position
+	Position* out = &m_positions[0][0];
+
+	bool found = false;
+
+	while (!found) {
+		int i = rand() % 20;
+		int j = rand() % 20;
+
+		if (!m_positions[i][j].m_is_occupied) {
+			out = &m_positions[i][j];
+			found = true;
+		}
+	}
+
+	return out;
+}
+
+void App::FindBunnyPosInArray(const Position* const mother_pos, int& i_pos_index, int& j_pos_index) {
+	bool is_found = false;
+	for (int i = 0; i < 20; i++) {
+		if (is_found) {
+			break;
+		}
+
+		for (int j = 0; j < 20; j++) {
+
+			// operator== glitched
+			if ((mother_pos->m_x == m_positions[i][j].m_x) && (mother_pos->m_y == m_positions[i][j].m_y)) {
+				i_pos_index = i;
+				j_pos_index = j;
+
+				is_found = true;
+
+				break;
+			}
+		}
+	}
+}
+
+void App::MakeBunny(Img* mother_img, int i, int j) {
+	Bunny* new_bunny = new Bunny();
+						
+	new_bunny->set_img(mother_img);
+	new_bunny->set_pos(&m_positions[i][j]);
+
+	m_bunnies.push_back(new_bunny);
+}
+
+Bunny* App::FindBunnyByPos(Position pos) {
+	for (std::list<Bunny*>::iterator i = m_bunnies.begin(); i != m_bunnies.end(); ++i) {
+		if (((*i)->get_pos()->m_x == pos.m_x) && ((*i)->get_pos()->m_y == pos.m_y)) {
+			return *i;
+		}
+	}
 }
